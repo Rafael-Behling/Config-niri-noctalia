@@ -1,0 +1,8 @@
+#!/bin/sh
+# Cancela um desligamento agendado (se houver).
+
+if /usr/bin/shutdown -c >/dev/null 2>&1; then
+    notify-send -i system-shutdown "Desligamento cancelado" "O agendamento foi removido."
+else
+    notify-send -i system-shutdown "Nada agendado" "Não há desligamento programado."
+fi

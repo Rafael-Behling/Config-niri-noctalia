@@ -1,0 +1,36 @@
+#!/bin/sh
+# Programar o desligamento, em minutos.
+# Campo vazio = cancela um desligamento já agendado.
+
+PENDING="/run/systemd/shutdown/scheduled"
+
+minutos=$(zenity --entry \
+    --title="Programar desligamento" \
+    --text="Desligar em quantos minutos?\n\nDeixe vazio para cancelar um agendamento existente." \
+    2>/dev/null) || exit 0
+
+if [ -z "$minutos" ]; then
+    if [ -f "$PENDING" ]; then
+        /usr/bin/shutdown -c >/dev/null 2>&1 \
+            && notify-send -i system-shutdown "Desligamento cancelado" "O agendamento foi removido." \
+            || notify-send -u critical "Erro" "Não foi possível cancelar. Tente: shutdown -c"
+    else
+        notify-send -i system-shutdown "Nada agendado" "Não há desligamento programado."
+    fi
+    exit 0
+fi
+
+case "$minutos" in
+    *[!0-9]*|'')
+        notify-send -u critical "Valor inválido" "Digite apenas números de minutos."
+        exit 1
+        ;;
+esac
+
+horario=$(date -d "+${minutos} minutes" '+%H:%M')
+
+if /usr/bin/shutdown -h +"${minutos}" >/dev/null 2>&1; then
+    notify-send -i system-shutdown "Desligamento programado" "O PC vai desligar às ${horario} (em ${minutos} min). Para cancelar: Ctrl+Alt+Shift+P."
+else
+    notify-send -u critical "Erro ao programar" "Não foi possível agendar o desligamento."
+fi
